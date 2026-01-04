@@ -14,6 +14,18 @@ export function LoginPage() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
 
+  const handleDemoLogin = (demoRole: string) => {
+    // Store demo user in localStorage
+    localStorage.setItem('demo_user', JSON.stringify({
+      id: 'demo-' + demoRole,
+      full_name: demoRole.charAt(0).toUpperCase() + demoRole.slice(1) + ' Demo',
+      role: demoRole,
+      avatar_url: null
+    }))
+    navigate('/dashboard')
+    window.location.reload()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -22,9 +34,8 @@ export function LoginPage() {
     if (isLogin) {
       const { error } = await signIn(email, password)
       if (error) {
-        // Handle email not confirmed error
         if (error.message.includes('Email not confirmed')) {
-          setError('Email not confirmed. Please check your email for a confirmation link, or disable email confirmation in Supabase Dashboard (Auth > Providers > Email > Confirm email = OFF)')
+          setError('Email not confirmed. Please check your email for a confirmation link.')
         } else {
           setError(error.message)
         }
@@ -37,86 +48,187 @@ export function LoginPage() {
         setError(error.message)
       } else {
         setError('')
-        // Show success message for signup
-        alert('Account created! Please check your email for confirmation link, or disable email confirmation in Supabase Dashboard for testing.')
+        alert('Account created! Please check your email for confirmation link.')
       }
     }
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8FAF7' }}>
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      backgroundColor: '#F8FAF7',
+      padding: '20px'
+    }}>
+      <div style={{ 
+        backgroundColor: 'white', 
+        borderRadius: '16px', 
+        boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+        padding: '32px',
+        width: '100%',
+        maxWidth: '420px'
+      }}>
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-2xl" style={{ backgroundColor: '#5B8C51' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '12px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            backgroundColor: '#5B8C51',
+            fontSize: '24px'
+          }}>
             🎓
           </div>
-          <span className="text-2xl font-bold text-gray-800">School Admin</span>
+          <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937' }}>School Admin</span>
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', textAlign: 'center', color: '#1f2937', marginBottom: '8px' }}>
           {isLogin ? 'Welcome Back!' : 'Create Account'}
         </h1>
-        <p className="text-center text-gray-500 mb-6">
+        <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '24px' }}>
           {isLogin ? 'Sign in to access your dashboard' : 'Register for a new account'}
         </p>
 
+        {/* Demo Login Buttons */}
+        <div style={{ marginBottom: '24px' }}>
+          <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginBottom: '12px' }}>
+            Quick Demo Login:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {['admin', 'teacher', 'student', 'finance'].map((demoRole) => (
+              <button
+                key={demoRole}
+                onClick={() => handleDemoLogin(demoRole)}
+                type="button"
+                style={{
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                  backgroundColor: '#f9fafb',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#374151',
+                  textTransform: 'capitalize'
+                }}
+              >
+                {demoRole}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid #e5e7eb', marginBottom: '24px' }}></div>
+
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+          <div style={{ 
+            marginBottom: '16px', 
+            padding: '12px', 
+            borderRadius: '8px', 
+            backgroundColor: '#fef2f2', 
+            color: '#dc2626',
+            fontSize: '14px'
+          }}>
             {error}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
+                Full Name
+              </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  outline: 'none',
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
+                }}
                 placeholder="Enter your full name"
                 required
               />
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
+              Email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                outline: 'none',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
               placeholder="Enter your email"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid #e5e7eb',
+                outline: 'none',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
               placeholder="Enter your password"
               required
             />
           </div>
 
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '4px' }}>
+                Role
+              </label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as typeof role)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  outline: 'none',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                  backgroundColor: 'white'
+                }}
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
@@ -129,20 +241,37 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-medium transition disabled:opacity-50"
-            style={{ backgroundColor: '#5B8C51' }}
+            style={{
+              width: '100%',
+              padding: '14px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: '#5B8C51',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: '500',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              marginTop: '8px'
+            }}
           >
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 
         {/* Toggle */}
-        <p className="text-center text-gray-600 mt-6">
+        <p style={{ textAlign: 'center', color: '#4b5563', marginTop: '24px' }}>
           {isLogin ? "Don't have an account? " : 'Already have an account? '}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="font-medium hover:underline"
-            style={{ color: '#5B8C51' }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#5B8C51',
+              fontWeight: '500',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
           >
             {isLogin ? 'Sign Up' : 'Sign In'}
           </button>

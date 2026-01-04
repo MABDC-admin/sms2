@@ -19,36 +19,36 @@ import { ChatPage } from './pages/ChatPage'
 // Placeholder pages for routes not yet implemented
 function AttendancePage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Attendance</h1>
-      <p className="text-gray-500">Coming soon...</p>
+    <div style={{ padding: '24px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Attendance</h1>
+      <p style={{ color: '#6b7280' }}>Coming soon...</p>
     </div>
   )
 }
 
 function FinanceListPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Finance</h1>
-      <p className="text-gray-500">Manage payments, invoices, and expenses</p>
+    <div style={{ padding: '24px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Finance</h1>
+      <p style={{ color: '#6b7280' }}>Manage payments, invoices, and expenses</p>
     </div>
   )
 }
 
 function ReportsPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Reports</h1>
-      <p className="text-gray-500">View and generate reports</p>
+    <div style={{ padding: '24px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Reports</h1>
+      <p style={{ color: '#6b7280' }}>View and generate reports</p>
     </div>
   )
 }
 
 function SettingsPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Settings</h1>
-      <p className="text-gray-500">Manage your account settings</p>
+    <div style={{ padding: '24px' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px' }}>Settings</h1>
+      <p style={{ color: '#6b7280' }}>Manage your account settings</p>
     </div>
   )
 }
@@ -58,58 +58,58 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <SchoolYearProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected Routes with MainLayout */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Dashboard - Role-based */}
-            <Route path="/dashboard" element={<DashboardPage />} />
+            {/* Protected Routes with MainLayout */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Dashboard - Role-based */}
+              <Route path="/dashboard" element={<DashboardPage />} />
 
-            {/* Grade Levels */}
-            <Route path="/grade-levels" element={<GradeLevelsPage />} />
-            <Route path="/grade-levels/:gradeId" element={<GradeDetailPage />} />
-            <Route path="/classroom/:subjectId" element={<ClassroomPage />} />
+              {/* Grade Levels */}
+              <Route path="/grade-levels" element={<GradeLevelsPage />} />
+              <Route path="/grade-levels/:gradeId" element={<GradeDetailPage />} />
+              <Route path="/classroom/:subjectId" element={<ClassroomPage />} />
 
-            {/* Student Records */}
-            <Route path="/records" element={<StudentRecordsPage />} />
+              {/* Student Records */}
+              <Route path="/records" element={<StudentRecordsPage />} />
 
-            {/* Students */}
-            <Route path="/students" element={<StudentsListPage />} />
-            <Route path="/students/new" element={<StudentFormPage />} />
-            <Route path="/students/:id/edit" element={<StudentFormPage />} />
+              {/* Students */}
+              <Route path="/students" element={<StudentsListPage />} />
+              <Route path="/students/new" element={<StudentFormPage />} />
+              <Route path="/students/:id/edit" element={<StudentFormPage />} />
 
-            {/* Teachers */}
-            <Route path="/teachers" element={<TeachersListPage />} />
-            <Route path="/teachers/new" element={<StudentFormPage />} />
-            <Route path="/teachers/:id/edit" element={<StudentFormPage />} />
+              {/* Teachers */}
+              <Route path="/teachers" element={<TeachersListPage />} />
+              <Route path="/teachers/new" element={<StudentFormPage />} />
+              <Route path="/teachers/:id/edit" element={<StudentFormPage />} />
 
-            {/* Classes */}
-            <Route path="/classes" element={<ClassesListPage />} />
-            <Route path="/classes/new" element={<ClassesListPage />} />
-            <Route path="/classes/:id/edit" element={<ClassesListPage />} />
+              {/* Classes */}
+              <Route path="/classes" element={<ClassesListPage />} />
+              <Route path="/classes/new" element={<ClassesListPage />} />
+              <Route path="/classes/:id/edit" element={<ClassesListPage />} />
 
-            {/* Other Pages */}
-            <Route path="/attendance" element={<AttendancePage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/finance" element={<FinanceListPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
+              {/* Other Pages */}
+              <Route path="/attendance" element={<AttendancePage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/finance" element={<FinanceListPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
 
-          {/* Redirects */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </SchoolYearProvider>
+            {/* Redirects */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </SchoolYearProvider>
       </AuthProvider>
     </BrowserRouter>
   )
