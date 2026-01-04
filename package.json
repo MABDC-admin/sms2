@@ -6,12 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
-    "scripts": {
-  "build:dev": "vite build --mode development"
-}
-
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
