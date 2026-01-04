@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
+import { getDemoUser } from '../lib/demoUser'
 
 export function FinanceDashboard() {
   const { profile } = useAuth()
   
   // Check for demo user
-  const demoUserStr = localStorage.getItem('demo_user')
-  const demoUser = demoUserStr ? JSON.parse(demoUserStr) : null
+  const demoUser = getDemoUser()
   const _currentUser = profile || demoUser
   void _currentUser // Keep for future use
-  
+
   const [_loading, setLoading] = useState(true)
 
   useEffect(() => {

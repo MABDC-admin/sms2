@@ -30,31 +30,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
+    let active = true
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Listen for auth changes FIRST (prevents missing events)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return
+
       setSession(session)
       setUser(session?.user ?? null)
-      
+
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        setTimeout(() => {
+          if (active) void fetchProfile(session.user.id)
+        }, 0)
       } else {
         setProfile(null)
         setLoading(false)
       }
     })
 
-    return () => subscription.unsubscribe()
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return
+
+      setSession(session)
+      setUser(session?.user ?? null)
+
+      if (session?.user) {
+        setTimeout(() => {
+          if (active) void fetchProfile(session.user.id)
+        }, 0)
+      } else {
+        setProfile(null)
+        setLoading(false)
+      }
+    })
+
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function fetchProfile(userId: string) {
@@ -62,13 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('profiles')
       .select('id, full_name, role, avatar_url')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    if (data) {
-      setProfile(data as Profile)
-    } else if (error) {
-      console.log('No profile found, user may need profile created')
+    if (error) {
+      // Keep this silent in production; profile might not exist yet.
+      setProfile(null)
+      setLoading(false)
+      return
     }
+
+    setProfile((data as Profile) ?? null)
     setLoading(false)
   }
 
@@ -78,15 +98,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, fullName: string, role: UserRole) {
+    const emailRedirectTo = `${window.location.origin}/`
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo,
         data: {
           full_name: fullName,
-          role: role
-        }
-      }
+          role: role,
+        },
+      },
     })
 
     if (!error && data.user) {
@@ -95,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_id: data.user.id,
         full_name: fullName,
         role: role,
-        email: email
+        email: email,
       })
     }
 
