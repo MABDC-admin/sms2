@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getDemoUser } from '../lib/demoUser'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -10,8 +11,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { user, profile, loading } = useAuth()
 
   // Check for demo user in localStorage
-  const demoUserStr = localStorage.getItem('demo_user')
-  const demoUser = demoUserStr ? JSON.parse(demoUserStr) : null
+  const demoUser = getDemoUser()
 
   if (loading && !demoUser) {
     return (

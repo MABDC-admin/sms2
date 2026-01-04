@@ -3,15 +3,15 @@ import { supabase } from '../lib/supabaseClient'
 import type { StudentKpis } from '../types'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
+import { getDemoUser } from '../lib/demoUser'
 
 export function StudentDashboard() {
   const { profile } = useAuth()
   
   // Check for demo user
-  const demoUserStr = localStorage.getItem('demo_user')
-  const demoUser = demoUserStr ? JSON.parse(demoUserStr) : null
+  const demoUser = getDemoUser()
   const currentUser = profile || demoUser
-  
+
   const [kpis, setKpis] = useState<StudentKpis | null>(null)
   const [loading, setLoading] = useState(true)
 
