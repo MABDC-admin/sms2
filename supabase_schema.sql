@@ -59,6 +59,14 @@ CREATE TABLE IF NOT EXISTS grade_levels (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add is_active column if table exists but column doesn't
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'grade_levels' AND column_name = 'is_active') THEN
+    ALTER TABLE grade_levels ADD COLUMN is_active BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
 -- Insert default grade levels
 INSERT INTO grade_levels (name, order_index, is_active) VALUES
   ('Kinder 1', 1, true),
