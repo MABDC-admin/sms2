@@ -20,6 +20,7 @@ const menuItems: MenuItem[] = [
   { icon: '💬', label: 'Chat', path: '/chat', roles: ['admin', 'teacher', 'finance'] },
   { icon: '💳', label: 'Finance', path: '/finance', roles: ['admin', 'finance'] },
   { icon: '📊', label: 'Reports', path: '/reports', roles: ['admin', 'finance'] },
+  { icon: '💬⭐', label: 'Suggestions', path: '/inbox', roles: ['admin'] },
   { icon: '⚙️', label: 'Settings', path: '/settings' },
 ]
 

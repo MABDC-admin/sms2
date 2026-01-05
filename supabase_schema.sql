@@ -356,6 +356,40 @@ CREATE POLICY "Allow anon all" ON employees FOR ALL TO anon USING (true) WITH CH
 CREATE POLICY "Allow anon all" ON payroll_records FOR ALL TO anon USING (true) WITH CHECK (true);
 
 -- ============================================
+-- SUGGESTIONS & REVIEWS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS suggestions_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL CHECK (type IN ('suggestion', 'review', 'complaint', 'feedback')),
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  submitter_name TEXT,
+  submitter_email TEXT,
+  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'resolved', 'archived')),
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE suggestions_reviews ENABLE ROW LEVEL SECURITY;
+
+-- Public can INSERT (submit feedback anonymously)
+CREATE POLICY "Allow anonymous insert" ON suggestions_reviews FOR INSERT TO anon WITH CHECK (true);
+
+-- Authenticated users can read all
+CREATE POLICY "Allow authenticated read" ON suggestions_reviews FOR SELECT TO authenticated USING (true);
+
+-- Authenticated users can update (for admin to change status/notes)
+CREATE POLICY "Allow authenticated update" ON suggestions_reviews FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions_reviews(status);
+CREATE INDEX IF NOT EXISTS idx_suggestions_type ON suggestions_reviews(type);
+CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_reviews(created_at DESC);
+
+-- ============================================
 -- SUCCESS MESSAGE
 -- ============================================
 -- All tables created successfully!
@@ -371,3 +405,4 @@ CREATE POLICY "Allow anon all" ON payroll_records FOR ALL TO anon USING (true) W
 -- 9. expenses - Expense tracking
 -- 10. employees - Employee/staff records
 -- 11. payroll_records - Payroll history
+-- 12. suggestions_reviews - Community feedback

@@ -18,6 +18,8 @@ import { ChatPage } from './pages/ChatPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { FinanceListPage } from './pages/FinanceListPage'
+import { SuggestionsFormPage } from './pages/SuggestionsFormPage'
+import { SuggestionsInboxPage } from './pages/SuggestionsInboxPage'
 
 // Placeholder for Attendance (to be implemented)
 function AttendancePage() {
@@ -38,6 +40,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/login" element={<Navigate to="/auth" replace />} />
+            <Route path="/suggestions" element={<SuggestionsFormPage />} />
 
             {/* Protected Routes with MainLayout */}
             <Route
@@ -79,6 +82,7 @@ function App() {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/finance" element={<FinanceListPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/inbox" element={<SuggestionsInboxPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
