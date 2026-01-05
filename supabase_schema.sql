@@ -131,19 +131,35 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================
 CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_name TEXT NOT NULL,
-  student_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  student_name TEXT NOT NULL DEFAULT '',
   amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   type TEXT DEFAULT 'Tuition',
-  status TEXT DEFAULT 'pending' CHECK (status IN ('paid', 'pending', 'overdue')),
-  reference TEXT UNIQUE,
+  status TEXT DEFAULT 'pending',
+  reference TEXT,
   notes TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create index for faster queries
+-- Add missing columns to payments if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'date') THEN
+    ALTER TABLE payments ADD COLUMN date DATE DEFAULT CURRENT_DATE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'type') THEN
+    ALTER TABLE payments ADD COLUMN type TEXT DEFAULT 'Tuition';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'notes') THEN
+    ALTER TABLE payments ADD COLUMN notes TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'reference') THEN
+    ALTER TABLE payments ADD COLUMN reference TEXT;
+  END IF;
+END $$;
+
+-- Create index for faster queries (only if column exists)
 CREATE INDEX IF NOT EXISTS idx_payments_date ON payments(date DESC);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 
@@ -174,16 +190,36 @@ CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   category TEXT NOT NULL DEFAULT 'Other',
-  description TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
   amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   approved_by TEXT DEFAULT '',
-  status TEXT DEFAULT 'pending' CHECK (status IN ('approved', 'pending', 'rejected')),
+  status TEXT DEFAULT 'pending',
   receipt_url TEXT DEFAULT '',
   notes TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns to expenses if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'date') THEN
+    ALTER TABLE expenses ADD COLUMN date DATE DEFAULT CURRENT_DATE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'category') THEN
+    ALTER TABLE expenses ADD COLUMN category TEXT DEFAULT 'Other';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'approved_by') THEN
+    ALTER TABLE expenses ADD COLUMN approved_by TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'receipt_url') THEN
+    ALTER TABLE expenses ADD COLUMN receipt_url TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'notes') THEN
+    ALTER TABLE expenses ADD COLUMN notes TEXT DEFAULT '';
+  END IF;
+END $$;
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC);
