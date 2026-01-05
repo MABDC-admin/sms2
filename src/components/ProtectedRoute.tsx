@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getDemoUser } from '../lib/demoUser'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -10,10 +9,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, profile, loading } = useAuth()
 
-  // Check for demo user in localStorage
-  const demoUser = getDemoUser()
-
-  if (loading && !demoUser) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8FAF7' }}>
         <div className="text-center">
@@ -26,13 +22,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     )
   }
 
-  // Allow access if demo user exists
-  if (demoUser) {
-    return <>{children}</>
-  }
-
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/auth" replace />
   }
 
   if (allowedRoles && profile && !allowedRoles.includes(profile.role as any)) {
