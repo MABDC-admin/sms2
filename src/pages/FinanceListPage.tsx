@@ -45,7 +45,7 @@ interface Employee {
 }
 
 export function FinanceListPage() {
-  const { selectedYear } = useSchoolYear()
+  const { selectedYear: _selectedYear } = useSchoolYear()
   const [activeTab, setActiveTab] = useState<FinanceTab>('overview')
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')

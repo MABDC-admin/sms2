@@ -50,7 +50,7 @@ export function ReportsPage() {
     ]
   })
 
-  const [attendanceStats, setAttendanceStats] = useState<AttendanceStats>({
+  const [attendanceStats, _setAttendanceStats] = useState<AttendanceStats>({
     averageRate: 92.5,
     monthlyData: [
       { month: 'Jun', rate: 95 }, { month: 'Jul', rate: 93 },
@@ -61,7 +61,7 @@ export function ReportsPage() {
     ]
   })
 
-  const [academicStats, setAcademicStats] = useState<AcademicStats>({
+  const [academicStats, _setAcademicStats] = useState<AcademicStats>({
     passRate: 94.2,
     averageGrade: 85.6,
     distribution: [
@@ -73,7 +73,7 @@ export function ReportsPage() {
     ]
   })
 
-  const [financialStats, setFinancialStats] = useState<FinancialStats>({
+  const [financialStats, _setFinancialStats] = useState<FinancialStats>({
     totalCollected: 4250000,
     totalExpected: 5100000,
     outstanding: 850000,
@@ -86,7 +86,7 @@ export function ReportsPage() {
     ]
   })
 
-  const [teacherStats, setTeacherStats] = useState({
+  const [teacherStats, _setTeacherStats] = useState({
     total: 42,
     fullTime: 35,
     partTime: 7,

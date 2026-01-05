@@ -3,7 +3,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { SchoolYearProvider } from './contexts/SchoolYearContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { MainLayout } from './layouts/MainLayout'
-import { LoginPage } from './pages/LoginPage'
+import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { GradeLevelsPage } from './pages/GradeLevelsPage'
 import { GradeDetailPage } from './pages/GradeDetailPage'
@@ -36,7 +36,8 @@ function App() {
         <SchoolYearProvider>
           <Routes>
             {/* Public Routes */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/login" element={<Navigate to="/auth" replace />} />
 
             {/* Protected Routes with MainLayout */}
             <Route
