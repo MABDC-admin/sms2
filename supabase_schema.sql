@@ -145,6 +145,9 @@ CREATE TABLE IF NOT EXISTS payments (
 -- Add missing columns to payments if they don't exist
 DO $$ 
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
+    ALTER TABLE payments ADD COLUMN status TEXT DEFAULT 'pending';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'date') THEN
     ALTER TABLE payments ADD COLUMN date DATE DEFAULT CURRENT_DATE;
   END IF;
@@ -157,6 +160,12 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'reference') THEN
     ALTER TABLE payments ADD COLUMN reference TEXT;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'student_name') THEN
+    ALTER TABLE payments ADD COLUMN student_name TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'amount') THEN
+    ALTER TABLE payments ADD COLUMN amount DECIMAL(12,2) DEFAULT 0;
+  END IF;
 END $$;
 
 -- Create index for faster queries (only if column exists)
@@ -168,17 +177,27 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 -- ============================================
 CREATE TABLE IF NOT EXISTS invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  invoice_no TEXT UNIQUE NOT NULL,
-  student_name TEXT NOT NULL,
-  student_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  invoice_no TEXT UNIQUE,
+  student_name TEXT NOT NULL DEFAULT '',
   amount DECIMAL(12,2) NOT NULL DEFAULT 0,
   paid_amount DECIMAL(12,2) DEFAULT 0,
-  due_date DATE NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('paid', 'pending', 'overdue', 'partial')),
+  due_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  status TEXT DEFAULT 'pending',
   notes TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns to invoices if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoices' AND column_name = 'status') THEN
+    ALTER TABLE invoices ADD COLUMN status TEXT DEFAULT 'pending';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoices' AND column_name = 'due_date') THEN
+    ALTER TABLE invoices ADD COLUMN due_date DATE DEFAULT CURRENT_DATE;
+  END IF;
+END $$;
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON invoices(due_date);
@@ -204,11 +223,20 @@ CREATE TABLE IF NOT EXISTS expenses (
 -- Add missing columns to expenses if they don't exist
 DO $$ 
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'status') THEN
+    ALTER TABLE expenses ADD COLUMN status TEXT DEFAULT 'pending';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'date') THEN
     ALTER TABLE expenses ADD COLUMN date DATE DEFAULT CURRENT_DATE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'category') THEN
     ALTER TABLE expenses ADD COLUMN category TEXT DEFAULT 'Other';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'description') THEN
+    ALTER TABLE expenses ADD COLUMN description TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'amount') THEN
+    ALTER TABLE expenses ADD COLUMN amount DECIMAL(12,2) DEFAULT 0;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'expenses' AND column_name = 'approved_by') THEN
     ALTER TABLE expenses ADD COLUMN approved_by TEXT DEFAULT '';
@@ -231,18 +259,31 @@ CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
 -- ============================================
 CREATE TABLE IF NOT EXISTS employees (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  employee_no TEXT UNIQUE,
-  name TEXT NOT NULL,
+  employee_no TEXT,
+  name TEXT NOT NULL DEFAULT '',
   position TEXT DEFAULT '',
   department TEXT DEFAULT '',
   salary DECIMAL(12,2) DEFAULT 0,
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'on_leave')),
+  status TEXT DEFAULT 'active',
   hire_date DATE DEFAULT CURRENT_DATE,
   bank_account TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns to employees if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'status') THEN
+    ALTER TABLE employees ADD COLUMN status TEXT DEFAULT 'active';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'salary') THEN
+    ALTER TABLE employees ADD COLUMN salary DECIMAL(12,2) DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'department') THEN
+    ALTER TABLE employees ADD COLUMN department TEXT DEFAULT '';
+  END IF;
+END $$;
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_employees_status ON employees(status);
@@ -253,17 +294,25 @@ CREATE INDEX IF NOT EXISTS idx_employees_department ON employees(department);
 -- ============================================
 CREATE TABLE IF NOT EXISTS payroll_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
-  period_start DATE NOT NULL,
-  period_end DATE NOT NULL,
+  employee_id UUID,
+  period_start DATE NOT NULL DEFAULT CURRENT_DATE,
+  period_end DATE NOT NULL DEFAULT CURRENT_DATE,
   basic_salary DECIMAL(12,2) DEFAULT 0,
   deductions DECIMAL(12,2) DEFAULT 0,
   bonuses DECIMAL(12,2) DEFAULT 0,
   net_pay DECIMAL(12,2) DEFAULT 0,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'paid')),
+  status TEXT DEFAULT 'pending',
   paid_date DATE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add missing columns to payroll_records if they don't exist
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payroll_records' AND column_name = 'status') THEN
+    ALTER TABLE payroll_records ADD COLUMN status TEXT DEFAULT 'pending';
+  END IF;
+END $$;
 
 -- ============================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
