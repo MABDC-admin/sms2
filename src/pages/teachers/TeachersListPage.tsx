@@ -205,66 +205,85 @@ export function TeachersListPage() {
 
     setUploading(true)
 
-    if (editingTeacher) {
-      // Upload avatar if a new file was selected
-      let newAvatarUrl = editingTeacher.avatar_url
-      if (avatarFile) {
-        const uploadedUrl = await uploadAvatar(editingTeacher.id)
-        if (uploadedUrl) newAvatarUrl = uploadedUrl
-      }
+    try {
+      if (editingTeacher) {
+        // Upload avatar if a new file was selected
+        let newAvatarUrl = editingTeacher.avatar_url
+        if (avatarFile) {
+          const uploadedUrl = await uploadAvatar(editingTeacher.id)
+          if (uploadedUrl) newAvatarUrl = uploadedUrl
+        }
 
-      // Update in database if it exists
-      await supabase
-        .from('profiles')
-        .update({
-          full_name: formData.full_name,
+        // Update in database
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            full_name: formData.full_name,
+            email: formData.email,
+            avatar_url: newAvatarUrl
+          })
+          .eq('id', editingTeacher.id)
+
+        if (error) throw error
+        await loadTeachers()
+      } else {
+        // Create new teacher via Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
-          avatar_url: newAvatarUrl
-        })
-        .eq('id', editingTeacher.id)
-
-      setTeachers(teachers.map(t =>
-        t.id === editingTeacher.id
-          ? {
-              ...t,
+          password: formData.password,
+          options: {
+            data: {
               full_name: formData.full_name,
-              email: formData.email,
-              password: formData.password || t.password,
-              avatar_url: newAvatarUrl,
-              assigned_levels: formData.assigned_levels,
-              assigned_subjects: formData.assigned_subjects
-            }
-          : t
-      ))
-    } else {
-      const newId = Date.now().toString()
-      let newAvatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${formData.full_name}&backgroundColor=transparent`
-      
-      if (avatarFile) {
-        const uploadedUrl = await uploadAvatar(newId)
-        if (uploadedUrl) newAvatarUrl = uploadedUrl
-      }
+              role: 'teacher'
+            },
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        })
 
-      const newTeacher: Teacher = {
-        id: newId,
-        full_name: formData.full_name,
-        email: formData.email,
-        password: formData.password,
-        avatar_url: newAvatarUrl,
-        assigned_levels: formData.assigned_levels,
-        assigned_subjects: formData.assigned_subjects
+        if (authError) throw authError
+
+        if (authData.user) {
+          let newAvatarUrl = `https://api.dicebear.com/7.x/adventurer/svg?seed=${formData.full_name}&backgroundColor=transparent`
+          if (avatarFile) {
+            const uploadedUrl = await uploadAvatar(authData.user.id)
+            if (uploadedUrl) newAvatarUrl = uploadedUrl
+          }
+
+          // Create profile
+          await supabase.from('profiles').upsert({
+            user_id: authData.user.id,
+            full_name: formData.full_name,
+            email: formData.email,
+            role: 'teacher',
+            avatar_url: newAvatarUrl,
+            is_active: true
+          })
+
+          await loadTeachers()
+        }
       }
-      setTeachers([...teachers, newTeacher])
+      setShowModal(false)
+    } catch (err: any) {
+      alert(err.message || 'Failed to save teacher')
+    } finally {
+      setUploading(false)
     }
-    
-    setUploading(false)
-    setShowModal(false)
   }
 
-  function handleDelete(id: string) {
-    if (confirm('Are you sure you want to delete this teacher?')) {
-      setTeachers(teachers.filter(t => t.id !== id))
+  async function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this teacher?')) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: false })
+      .eq('id', id)
+
+    if (error) {
+      alert('Failed to delete teacher')
+      return
     }
+
+    await loadTeachers()
   }
 
   return (
