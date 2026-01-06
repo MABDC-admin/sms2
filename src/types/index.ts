@@ -27,7 +27,7 @@ export type AttendanceMonth = {
   present_rate_pct: number
 }
 
-export type UserRole = 'admin' | 'teacher' | 'student' | 'finance'
+export type UserRole = 'admin' | 'teacher' | 'student' | 'finance' | 'principal'
 
 export type Profile = {
   id: string

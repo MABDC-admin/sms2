@@ -12,6 +12,8 @@ import { StudentRecordsPage } from './pages/StudentRecordsPage'
 import { StudentsListPage } from './pages/students/StudentsListPage'
 import { StudentFormPage } from './pages/students/StudentFormPage'
 import { TeachersListPage } from './pages/teachers/TeachersListPage'
+import { AdminsListPage } from './pages/admins/AdminsListPage'
+import { PrincipalsListPage } from './pages/principals/PrincipalsListPage'
 import { ClassesListPage } from './pages/classes/ClassesListPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { ChatPage } from './pages/ChatPage'
@@ -68,8 +70,12 @@ function App() {
 
               {/* Teachers */}
               <Route path="/teachers" element={<TeachersListPage />} />
-              <Route path="/teachers/new" element={<StudentFormPage />} />
-              <Route path="/teachers/:id/edit" element={<StudentFormPage />} />
+
+              {/* Admins */}
+              <Route path="/admins" element={<AdminsListPage />} />
+
+              {/* Principals */}
+              <Route path="/principals" element={<PrincipalsListPage />} />
 
               {/* Classes */}
               <Route path="/classes" element={<ClassesListPage />} />

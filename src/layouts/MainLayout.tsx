@@ -5,22 +5,24 @@ interface MenuItem {
   icon: string
   label: string
   path: string
-  roles?: ('admin' | 'teacher' | 'student' | 'finance')[]
+  roles?: ('admin' | 'teacher' | 'student' | 'finance' | 'principal')[]
 }
 
 const menuItems: MenuItem[] = [
   { icon: '📊', label: 'Dashboard', path: '/dashboard' },
-  { icon: '📚', label: 'Grade Levels', path: '/grade-levels', roles: ['admin'] },
-  { icon: '👤', label: 'Students', path: '/students', roles: ['admin', 'teacher'] },
-  { icon: '📋', label: 'Records', path: '/records', roles: ['admin'] },
-  { icon: '🅿️', label: 'Teachers', path: '/teachers', roles: ['admin'] },
-  { icon: '📖', label: 'Classes', path: '/classes', roles: ['admin', 'teacher'] },
-  { icon: '✅', label: 'Attendance', path: '/attendance', roles: ['admin', 'teacher'] },
-  { icon: '📅', label: 'Calendar', path: '/calendar', roles: ['admin', 'teacher', 'student'] },
-  { icon: '💬', label: 'Chat', path: '/chat', roles: ['admin', 'teacher', 'finance'] },
-  { icon: '💳', label: 'Finance', path: '/finance', roles: ['admin', 'finance'] },
-  { icon: '📊', label: 'Reports', path: '/reports', roles: ['admin', 'finance'] },
-  { icon: '💬⭐', label: 'Suggestions', path: '/inbox', roles: ['admin'] },
+  { icon: '📚', label: 'Grade Levels', path: '/grade-levels', roles: ['admin', 'principal'] },
+  { icon: '👤', label: 'Students', path: '/students', roles: ['admin', 'teacher', 'principal'] },
+  { icon: '📋', label: 'Records', path: '/records', roles: ['admin', 'principal'] },
+  { icon: '🅿️', label: 'Teachers', path: '/teachers', roles: ['admin', 'principal'] },
+  { icon: '🛡️', label: 'Admins', path: '/admins', roles: ['admin', 'principal'] },
+  { icon: '🎓', label: 'Principals', path: '/principals', roles: ['admin'] },
+  { icon: '📖', label: 'Classes', path: '/classes', roles: ['admin', 'teacher', 'principal'] },
+  { icon: '✅', label: 'Attendance', path: '/attendance', roles: ['admin', 'teacher', 'principal'] },
+  { icon: '📅', label: 'Calendar', path: '/calendar', roles: ['admin', 'teacher', 'student', 'principal'] },
+  { icon: '💬', label: 'Chat', path: '/chat', roles: ['admin', 'teacher', 'finance', 'principal'] },
+  { icon: '💳', label: 'Finance', path: '/finance', roles: ['admin', 'finance', 'principal'] },
+  { icon: '📊', label: 'Reports', path: '/reports', roles: ['admin', 'finance', 'principal'] },
+  { icon: '💬⭐', label: 'Suggestions', path: '/inbox', roles: ['admin', 'principal'] },
   { icon: '⚙️', label: 'Settings', path: '/settings' },
 ]
 
@@ -46,6 +48,7 @@ export function MainLayout() {
       case 'teacher': return 'Teacher Dashboard'
       case 'student': return 'Student Portal'
       case 'finance': return 'Finance & HR'
+      case 'principal': return 'Principal'
       default: return 'School Admin'
     }
   }
