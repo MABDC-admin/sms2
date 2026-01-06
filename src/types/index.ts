@@ -27,7 +27,7 @@ export type AttendanceMonth = {
   present_rate_pct: number
 }
 
-export type UserRole = 'admin' | 'teacher' | 'student' | 'finance' | 'principal'
+export type UserRole = 'admin' | 'teacher' | 'student' | 'finance' | 'principal' | 'registrar' | 'accounting'
 
 export type Profile = {
   id: string
@@ -38,6 +38,15 @@ export type Profile = {
   phone: string | null
   avatar_url: string | null
   is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type MenuPermission = {
+  id: string
+  user_id: string
+  menu_key: string
+  is_enabled: boolean
   created_at: string
   updated_at: string
 }

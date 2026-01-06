@@ -1,9 +1,10 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import type { UserRole } from '../types'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedRoles?: ('admin' | 'teacher' | 'student' | 'finance')[]
+  allowedRoles?: UserRole[]
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -26,7 +27,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/auth" replace />
   }
 
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role as any)) {
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role as UserRole)) {
     return <Navigate to="/dashboard" replace />
   }
 

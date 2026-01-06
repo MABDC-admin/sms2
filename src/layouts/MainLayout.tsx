@@ -1,46 +1,64 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import type { MenuPermission } from '../types'
+
+type UserRole = 'admin' | 'teacher' | 'student' | 'finance' | 'principal' | 'registrar' | 'accounting'
 
 interface MenuItem {
   icon: string
   label: string
   path: string
-  roles?: ('admin' | 'teacher' | 'student' | 'finance' | 'principal')[]
+  key: string
+  roles?: UserRole[]
 }
 
 const menuItems: MenuItem[] = [
-  { icon: '📊', label: 'Dashboard', path: '/dashboard' },
-  { icon: '📚', label: 'Grade Levels', path: '/grade-levels', roles: ['admin', 'principal'] },
-  { icon: '👤', label: 'Students', path: '/students', roles: ['admin', 'teacher', 'principal'] },
-  { icon: '📋', label: 'Records', path: '/records', roles: ['admin', 'principal'] },
-  { icon: '🅿️', label: 'Teachers', path: '/teachers', roles: ['admin', 'principal'] },
-  { icon: '🛡️', label: 'Admins', path: '/admins', roles: ['admin', 'principal'] },
-  { icon: '🎓', label: 'Principals', path: '/principals', roles: ['admin'] },
-  { icon: '📖', label: 'Classes', path: '/classes', roles: ['admin', 'teacher', 'principal'] },
-  { icon: '✅', label: 'Attendance', path: '/attendance', roles: ['admin', 'teacher', 'principal'] },
-  { icon: '📅', label: 'Calendar', path: '/calendar', roles: ['admin', 'teacher', 'student', 'principal'] },
-  { icon: '💬', label: 'Chat', path: '/chat', roles: ['admin', 'teacher', 'finance', 'principal'] },
-  { icon: '💳', label: 'Finance', path: '/finance', roles: ['admin', 'finance', 'principal'] },
-  { icon: '📊', label: 'Reports', path: '/reports', roles: ['admin', 'finance', 'principal'] },
-  { icon: '💬⭐', label: 'Suggestions', path: '/inbox', roles: ['admin', 'principal'] },
-  { icon: '⚙️', label: 'Settings', path: '/settings' },
+  { icon: '📊', label: 'Dashboard', path: '/dashboard', key: 'dashboard' },
+  { icon: '📚', label: 'Grade Levels', path: '/grade-levels', key: 'grade-levels', roles: ['admin', 'principal', 'registrar'] },
+  { icon: '👤', label: 'Students', path: '/students', key: 'students', roles: ['admin', 'teacher', 'principal', 'registrar'] },
+  { icon: '📋', label: 'Records', path: '/records', key: 'records', roles: ['admin', 'principal', 'registrar'] },
+  { icon: '🅿️', label: 'Teachers', path: '/teachers', key: 'teachers', roles: ['admin', 'principal', 'registrar'] },
+  { icon: '🛡️', label: 'Admins', path: '/admins', key: 'admins', roles: ['admin', 'principal'] },
+  { icon: '🎓', label: 'Principals', path: '/principals', key: 'principals', roles: ['admin'] },
+  { icon: '📝', label: 'Registrars', path: '/registrars', key: 'registrars', roles: ['admin'] },
+  { icon: '💰', label: 'Accounting', path: '/accounting-users', key: 'accounting-users', roles: ['admin'] },
+  { icon: '📖', label: 'Classes', path: '/classes', key: 'classes', roles: ['admin', 'teacher', 'principal', 'registrar'] },
+  { icon: '✅', label: 'Attendance', path: '/attendance', key: 'attendance', roles: ['admin', 'teacher', 'principal', 'registrar'] },
+  { icon: '📅', label: 'Calendar', path: '/calendar', key: 'calendar', roles: ['admin', 'teacher', 'student', 'principal', 'registrar', 'accounting'] },
+  { icon: '💬', label: 'Chat', path: '/chat', key: 'chat', roles: ['admin', 'teacher', 'finance', 'principal', 'registrar', 'accounting'] },
+  { icon: '💳', label: 'Finance', path: '/finance', key: 'finance', roles: ['admin', 'finance', 'principal', 'accounting'] },
+  { icon: '📊', label: 'Reports', path: '/reports', key: 'reports', roles: ['admin', 'finance', 'principal', 'registrar', 'accounting'] },
+  { icon: '💬⭐', label: 'Suggestions', path: '/inbox', key: 'inbox', roles: ['admin', 'principal'] },
+  { icon: '⚙️', label: 'Settings', path: '/settings', key: 'settings', roles: ['admin', 'principal', 'registrar', 'accounting'] },
 ]
 
 export function MainLayout() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, user } = useAuth()
   const navigate = useNavigate()
   const currentUser = profile
+  const [menuPermissions, setMenuPermissions] = useState<MenuPermission[]>([])
+
+  useEffect(() => {
+    if (user?.id) {
+      loadMenuPermissions()
+    }
+  }, [user?.id])
+
+  async function loadMenuPermissions() {
+    const { data } = await supabase
+      .from('user_menu_permissions')
+      .select('*')
+      .eq('user_id', user?.id)
+    
+    setMenuPermissions(data || [])
+  }
 
   const handleSignOut = async () => {
     await signOut()
     navigate('/login')
   }
-
-  const filteredMenuItems = menuItems.filter(item => {
-    if (!item.roles) return true
-    if (!currentUser?.role) return false
-    return item.roles.includes(currentUser.role as any)
-  })
 
   const getDashboardTitle = () => {
     switch (currentUser?.role) {
@@ -49,9 +67,39 @@ export function MainLayout() {
       case 'student': return 'Student Portal'
       case 'finance': return 'Finance & HR'
       case 'principal': return 'Principal'
+      case 'registrar': return 'Registrar'
+      case 'accounting': return 'Accounting'
       default: return 'School Admin'
     }
   }
+
+  const isMenuEnabled = (menuKey: string): boolean => {
+    // If no permissions set for this user, use role defaults
+    const permission = menuPermissions.find(p => p.menu_key === menuKey)
+    if (permission) {
+      return permission.is_enabled
+    }
+    // Default to true if no explicit permission set
+    return true
+  }
+
+  const filteredMenuItems = menuItems.filter(item => {
+    // First check role-based access
+    if (item.roles && currentUser?.role) {
+      if (!item.roles.includes(currentUser.role as UserRole)) {
+        return false
+      }
+    } else if (item.roles && !currentUser?.role) {
+      return false
+    }
+    
+    // Then check admin-assigned menu permissions (only for non-admin roles)
+    if (currentUser?.role !== 'admin' && menuPermissions.length > 0) {
+      return isMenuEnabled(item.key)
+    }
+    
+    return true
+  })
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">

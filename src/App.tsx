@@ -14,6 +14,8 @@ import { StudentFormPage } from './pages/students/StudentFormPage'
 import { TeachersListPage } from './pages/teachers/TeachersListPage'
 import { AdminsListPage } from './pages/admins/AdminsListPage'
 import { PrincipalsListPage } from './pages/principals/PrincipalsListPage'
+import { RegistrarsListPage } from './pages/registrars/RegistrarsListPage'
+import { AccountingListPage } from './pages/accounting/AccountingListPage'
 import { ClassesListPage } from './pages/classes/ClassesListPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { ChatPage } from './pages/ChatPage'
@@ -76,6 +78,12 @@ function App() {
 
               {/* Principals */}
               <Route path="/principals" element={<PrincipalsListPage />} />
+
+              {/* Registrars */}
+              <Route path="/registrars" element={<RegistrarsListPage />} />
+
+              {/* Accounting Users */}
+              <Route path="/accounting-users" element={<AccountingListPage />} />
 
               {/* Classes */}
               <Route path="/classes" element={<ClassesListPage />} />
