@@ -4,6 +4,8 @@ import { TeacherDashboard } from './TeacherDashboard'
 import { StudentDashboard } from './StudentDashboard'
 import { FinanceDashboard } from './FinanceDashboard'
 import { PrincipalDashboard } from './PrincipalDashboard'
+import { RegistrarDashboard } from './RegistrarDashboard'
+import { AccountingDashboard } from './AccountingDashboard'
 
 export function DashboardPage() {
   const { profile } = useAuth()
@@ -20,6 +22,10 @@ export function DashboardPage() {
       return <FinanceDashboard />
     case 'principal':
       return <PrincipalDashboard />
+    case 'registrar':
+      return <RegistrarDashboard />
+    case 'accounting':
+      return <AccountingDashboard />
     default:
       return <AdminDashboard />
   }

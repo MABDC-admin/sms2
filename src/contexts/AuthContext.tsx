@@ -1,13 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabaseClient'
-
-type UserRole = 'admin' | 'teacher' | 'student' | 'finance' | 'principal' | null
+import type { UserRole } from '../types'
 
 interface Profile {
   id: string
   full_name: string
-  role: UserRole
+  role: UserRole | null
   avatar_url: string | null
 }
 
