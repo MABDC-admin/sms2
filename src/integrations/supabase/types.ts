@@ -490,6 +490,39 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string | null
+          email_announcements: boolean | null
+          email_attendance: boolean | null
+          email_grades: boolean | null
+          email_payments: boolean | null
+          id: string
+          sms_reminders: boolean | null
+          sms_urgent: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_announcements?: boolean | null
+          email_attendance?: boolean | null
+          email_grades?: boolean | null
+          email_payments?: boolean | null
+          id?: string
+          sms_reminders?: boolean | null
+          sms_urgent?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          email_announcements?: boolean | null
+          email_attendance?: boolean | null
+          email_grades?: boolean | null
+          email_payments?: boolean | null
+          id?: string
+          sms_reminders?: boolean | null
+          sms_urgent?: boolean | null
+        }
+        Relationships: []
+      }
       parents: {
         Row: {
           address: string | null
@@ -700,6 +733,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_login_at: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string | null
           user_id: string
@@ -712,6 +746,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
           user_id: string
@@ -724,6 +759,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
           user_id?: string
@@ -1159,6 +1195,60 @@ export type Database = {
         }
         Relationships: []
       }
+      submissions: {
+        Row: {
+          assignment_id: string | null
+          class_id: string | null
+          created_at: string | null
+          graded_at: string | null
+          id: string
+          score: number | null
+          status: string | null
+          student_id: string | null
+          submitted_at: string | null
+          teacher_feedback: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          status?: string | null
+          student_id?: string | null
+          submitted_at?: string | null
+          teacher_feedback?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          class_id?: string | null
+          created_at?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          status?: string | null
+          student_id?: string | null
+          submitted_at?: string | null
+          teacher_feedback?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggestions_reviews: {
         Row: {
           admin_notes: string | null
@@ -1198,6 +1288,39 @@ export type Database = {
           subject?: string | null
           submitted_by?: string | null
           type?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          attendance_threshold: number | null
+          created_at: string | null
+          currency: string | null
+          date_format: string | null
+          grading_system: string | null
+          id: string
+          late_payment_penalty: number | null
+          timezone: string | null
+        }
+        Insert: {
+          attendance_threshold?: number | null
+          created_at?: string | null
+          currency?: string | null
+          date_format?: string | null
+          grading_system?: string | null
+          id?: string
+          late_payment_penalty?: number | null
+          timezone?: string | null
+        }
+        Update: {
+          attendance_threshold?: number | null
+          created_at?: string | null
+          currency?: string | null
+          date_format?: string | null
+          grading_system?: string | null
+          id?: string
+          late_payment_penalty?: number | null
+          timezone?: string | null
         }
         Relationships: []
       }

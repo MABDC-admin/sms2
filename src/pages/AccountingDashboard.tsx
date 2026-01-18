@@ -43,11 +43,17 @@ export function AccountingDashboard() {
       // Load recent transactions (combine payments and expenses)
       const { data: payments } = await supabase
         .from('payments')
-        .select('id, amount, description, created_at')
+        .select('id, amount, created_at, student_name')
         .order('created_at', { ascending: false })
         .limit(5)
 
-      setRecentTransactions((payments || []).map(p => ({ ...p, type: 'payment' })))
+      setRecentTransactions((payments || []).map(p => ({ 
+        id: p.id,
+        amount: p.amount,
+        created_at: p.created_at,
+        description: p.student_name || 'Payment',
+        type: 'payment' 
+      })))
       setLoading(false)
     }
 

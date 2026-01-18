@@ -4,12 +4,12 @@ import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription'
 
 interface Admin {
   id: string
-  full_name: string
-  email: string
-  phone: string
-  avatar_url: string
-  is_active: boolean
-  created_at: string
+  full_name: string | null
+  email: string | null
+  phone: string | null
+  avatar_url: string | null
+  is_active: boolean | null
+  created_at: string | null
 }
 
 export function AdminsListPage() {
@@ -40,10 +40,14 @@ export function AdminsListPage() {
       console.error('Error loading admins:', error)
       setAdmins([])
     } else {
-      setAdmins(data?.map(item => ({
+      setAdmins((data || []).map(item => ({
         ...item,
-        avatar_url: item.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${item.full_name}&backgroundColor=transparent`
-      })) || [])
+        full_name: item.full_name || 'Unknown',
+        email: item.email || '',
+        phone: item.phone || '',
+        avatar_url: item.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${item.full_name || 'user'}&backgroundColor=transparent`,
+        is_active: item.is_active ?? true
+      })))
     }
     setLoading(false)
   }, [])
@@ -69,7 +73,7 @@ export function AdminsListPage() {
   function openEditModal(admin: Admin) {
     setEditingAdmin(admin)
     setFormData({
-      full_name: admin.full_name,
+      full_name: admin.full_name || '',
       email: admin.email || '',
       phone: admin.phone || '',
       password: ''
@@ -239,8 +243,8 @@ export function AdminsListPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-full bg-white/30 overflow-hidden border-2 border-white/50">
                     <img
-                      src={admin.avatar_url}
-                      alt={admin.full_name}
+                      src={admin.avatar_url || ''}
+                      alt={admin.full_name || 'Admin'}
                       className="w-full h-full object-cover"
                     />
                   </div>

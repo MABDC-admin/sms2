@@ -192,7 +192,15 @@ export function SettingsPage() {
   // Handlers
   const handleSaveSchool = async () => {
     setSaveStatus('saving')
-    await supabase.from('school_settings').upsert({ id: 1, ...schoolInfo })
+    await supabase.from('school_settings').upsert({ 
+      name: schoolInfo.name,
+      address: schoolInfo.address,
+      phone: schoolInfo.phone,
+      email: schoolInfo.email,
+      website: schoolInfo.website,
+      principal: schoolInfo.principal,
+      founded_year: schoolInfo.founded_year ? parseInt(schoolInfo.founded_year) : null
+    })
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
   }
@@ -220,7 +228,13 @@ export function SettingsPage() {
 
   const handleAddUser = async () => {
     if (!userForm.full_name || !userForm.email) return
-    await supabase.from('profiles').insert({ full_name: userForm.full_name, email: userForm.email, role: userForm.role, is_active: true })
+    await supabase.from('profiles').upsert({ 
+      user_id: crypto.randomUUID(),
+      full_name: userForm.full_name, 
+      email: userForm.email, 
+      role: userForm.role as any, 
+      is_active: true 
+    })
     setShowUserModal(false)
     setUserForm({ full_name: '', email: '', role: 'student', password: '' })
     loadUsers()
@@ -269,10 +283,16 @@ export function SettingsPage() {
 
   const handleSaveFee = async () => {
     if (!feeForm.name || feeForm.amount <= 0) return
+    const feeData = {
+      name: feeForm.name,
+      amount: feeForm.amount,
+      description: feeForm.description,
+      is_active: feeForm.is_required
+    }
     if (editingFeeId) {
-      await supabase.from('fee_structure').update(feeForm).eq('id', editingFeeId)
+      await supabase.from('fee_structures').update(feeData).eq('id', editingFeeId)
     } else {
-      await supabase.from('fee_structure').insert(feeForm)
+      await supabase.from('fee_structures').insert(feeData)
     }
     setShowFeeModal(false)
     setFeeForm({ name: '', amount: 0, grade_level: 'All', description: '', is_required: false })
@@ -288,7 +308,7 @@ export function SettingsPage() {
 
   const handleDeleteFee = async (id: string) => {
     if (confirm('Delete this fee?')) {
-      await supabase.from('fee_structure').delete().eq('id', id)
+      await supabase.from('fee_structures').delete().eq('id', id)
       loadFees()
     }
   }
@@ -301,12 +321,12 @@ export function SettingsPage() {
   const handleSaveNotifications = async (key: string, value: boolean) => {
     const updated = { ...notifications, [key]: value }
     setNotifications(updated)
-    await supabase.from('notification_settings').upsert({ id: 1, ...updated })
+    await supabase.from('notification_settings').upsert(updated)
   }
 
   const handleSaveSystemSettings = async () => {
     setSaveStatus('saving')
-    await supabase.from('system_settings').upsert({ id: 1, ...systemSettings })
+    await supabase.from('system_settings').upsert(systemSettings)
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
   }
@@ -338,7 +358,7 @@ export function SettingsPage() {
   }
 
   const handleBackup = async () => {
-    const tables = ['profiles', 'student_records', 'academic_years', 'fee_structure', 'payments', 'expenses']
+    const tables = ['profiles', 'student_records', 'academic_years', 'fee_structures', 'payments', 'expenses'] as const
     const backup: Record<string, any> = {}
     for (const table of tables) {
       const { data } = await supabase.from(table).select('*')
