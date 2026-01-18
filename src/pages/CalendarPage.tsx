@@ -158,7 +158,7 @@ export function CalendarPage() {
         .from('school_events')
         .insert({
           title: formData.title,
-          event_date: formData.date,
+          start_date: formData.date,
           event_type: formData.type,
           description: formData.description,
         })

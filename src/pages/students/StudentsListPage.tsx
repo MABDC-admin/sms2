@@ -232,12 +232,12 @@ export function StudentsListPage() {
       // Insert new student to Supabase
       const { data: newRecord, error } = await supabase
         .from('student_records')
-        .insert({
+        .upsert({
           student_name: formData.full_name,
-          birth_date: formData.birthdate,
+          birth_date: formData.birthdate || null,
           level: formData.grade_level,
           school_year: selectedYear,
-          status: 'Active',
+          status: 'active',
           gender: '',
           lrn: `NEW-${Date.now()}`
         })

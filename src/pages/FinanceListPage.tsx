@@ -153,7 +153,7 @@ export function FinanceListPage() {
   const totalPending = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0)
   const totalOverdue = payments.filter(p => p.status === 'overdue').reduce((s, p) => s + p.amount, 0)
   const totalExpenses = expenses.filter(e => e.status === 'approved').reduce((s, e) => s + e.amount, 0)
-  const totalPayroll = employees.filter(e => e.status === 'active').reduce((s, e) => s + e.salary, 0)
+  const totalPayroll = employees.filter(e => e.status === 'active').reduce((s, e) => s + (e.salary || 0), 0)
 
   const monthlyData = [
     { month: 'Jun', income: 850000, expenses: 320000 },
@@ -259,7 +259,9 @@ export function FinanceListPage() {
 
   // Filtered data
   const filteredPayments = payments.filter(p => {
-    const matchSearch = p.student_name.toLowerCase().includes(searchTerm.toLowerCase()) || p.reference.toLowerCase().includes(searchTerm.toLowerCase())
+    const studentName = p.student_name || ''
+    const reference = p.reference || ''
+    const matchSearch = studentName.toLowerCase().includes(searchTerm.toLowerCase()) || reference.toLowerCase().includes(searchTerm.toLowerCase())
     const matchStatus = statusFilter === 'all' || p.status === statusFilter
     return matchSearch && matchStatus
   })
@@ -500,10 +502,10 @@ export function FinanceListPage() {
               ) : invoices.map((invoice) => (
                 <tr key={invoice.id} className="border-b hover:bg-gray-50">
                   <td className="py-3 px-4 font-mono text-sm">{invoice.invoice_no}</td>
-                  <td className="py-3 px-4 font-medium">{invoice.student_name}</td>
+                  <td className="py-3 px-4 font-medium">{invoice.student_name || '-'}</td>
                   <td className="py-3 px-4">₱{invoice.amount.toLocaleString()}</td>
-                  <td className="py-3 px-4" style={{ color: '#5B8C51' }}>₱{invoice.paid_amount.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-red-600">₱{(invoice.amount - invoice.paid_amount).toLocaleString()}</td>
+                  <td className="py-3 px-4" style={{ color: '#5B8C51' }}>₱{(invoice.paid_amount || 0).toLocaleString()}</td>
+                  <td className="py-3 px-4 text-red-600">₱{(invoice.amount - (invoice.paid_amount || 0)).toLocaleString()}</td>
                   <td className="py-3 px-4 text-gray-600">{invoice.due_date}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs capitalize ${invoice.status === 'paid' ? 'bg-green-100 text-green-700' : invoice.status === 'partial' ? 'bg-blue-100 text-blue-700' : invoice.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
@@ -616,7 +618,7 @@ export function FinanceListPage() {
                     <td className="py-3 px-4 font-medium">{emp.name}</td>
                     <td className="py-3 px-4">{emp.position}</td>
                     <td className="py-3 px-4">{emp.department}</td>
-                    <td className="py-3 px-4 font-bold" style={{ color: '#5B8C51' }}>₱{emp.salary.toLocaleString()}</td>
+                    <td className="py-3 px-4 font-bold" style={{ color: '#5B8C51' }}>₱{(emp.salary || 0).toLocaleString()}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded-full text-xs ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                         {emp.status}

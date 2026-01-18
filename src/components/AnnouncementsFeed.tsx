@@ -58,11 +58,13 @@ export function AnnouncementsFeed({ announcements, loading = false }: Announceme
                   : '📢 General'}
               </span>
               <span>
-                {new Date(announcement.published_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
+                {announcement.published_at 
+                  ? new Date(announcement.published_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })
+                  : 'No date'}
               </span>
             </div>
           </div>

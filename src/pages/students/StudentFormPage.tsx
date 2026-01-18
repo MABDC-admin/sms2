@@ -17,44 +17,45 @@ export function StudentFormPage() {
   const [gradeLevels, setGradeLevels] = useState<GradeLevel[]>([])
 
   const [formData, setFormData] = useState({
-    full_name: '',
+    student_name: '',
     email: '',
-    date_of_birth: '',
+    birth_date: '',
     gender: 'male',
-    phone: '',
-    address: '',
-    grade_level_id: '',
-    enrollment_date: new Date().toISOString().split('T')[0]
+    phone_number: '',
+    phil_address: '',
+    level: '',
+    school_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1)
   })
 
   useEffect(() => {
     loadGradeLevels()
-    if (isEdit) loadStudent()
+    if (isEdit && id) loadStudent()
   }, [id])
 
   async function loadGradeLevels() {
-    const { data } = await supabase.from('grade_levels').select('id, name').order('ordinal')
+    const { data } = await supabase.from('grade_levels').select('id, name').order('order_index')
     setGradeLevels(data || [])
   }
 
   async function loadStudent() {
+    if (!id) return
     setLoading(true)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*, students(*)')
+    const { data: student } = await supabase
+      .from('student_records')
+      .select('*')
       .eq('id', id)
       .single()
 
-    if (profile) {
+    if (student) {
       setFormData({
-        full_name: profile.full_name || '',
-        email: profile.email || '',
-        date_of_birth: profile.date_of_birth || '',
-        gender: profile.gender || 'male',
-        phone: profile.phone || '',
-        address: profile.address || '',
-        grade_level_id: profile.students?.[0]?.grade_level_id || '',
-        enrollment_date: profile.students?.[0]?.enrollment_date || new Date().toISOString().split('T')[0]
+        student_name: student.student_name || '',
+        email: student.email || '',
+        birth_date: student.birth_date || '',
+        gender: student.gender || 'male',
+        phone_number: student.phone_number || '',
+        phil_address: student.phil_address || '',
+        level: student.level || '',
+        school_year: student.school_year || ''
       })
     }
     setLoading(false)
@@ -64,59 +65,30 @@ export function StudentFormPage() {
     e.preventDefault()
     setSaving(true)
 
-    if (isEdit) {
+    if (isEdit && id) {
       // Update existing student
-      await supabase.from('profiles').update({
-        full_name: formData.full_name,
-        date_of_birth: formData.date_of_birth,
+      await supabase.from('student_records').update({
+        student_name: formData.student_name,
+        birth_date: formData.birth_date || null,
         gender: formData.gender,
-        phone: formData.phone,
-        address: formData.address
+        phone_number: formData.phone_number,
+        phil_address: formData.phil_address,
+        level: formData.level,
+        email: formData.email
       }).eq('id', id)
-
-      await supabase.from('students').update({
-        grade_level_id: formData.grade_level_id || null,
-        enrollment_date: formData.enrollment_date
-      }).eq('profile_id', id)
     } else {
-      // Create new student via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create new student
+      await supabase.from('student_records').insert({
+        student_name: formData.student_name,
         email: formData.email,
-        password: 'tempPassword123!',
-        options: {
-          data: {
-            full_name: formData.full_name,
-            role: 'student'
-          }
-        }
+        birth_date: formData.birth_date || null,
+        gender: formData.gender,
+        phone_number: formData.phone_number,
+        phil_address: formData.phil_address,
+        level: formData.level,
+        school_year: formData.school_year,
+        lrn: `LRN-${Date.now()}`
       })
-
-      if (authError) {
-        alert(authError.message)
-        setSaving(false)
-        return
-      }
-
-      if (authData.user) {
-        // Update profile
-        await supabase.from('profiles').upsert({
-          id: authData.user.id,
-          full_name: formData.full_name,
-          email: formData.email,
-          role: 'student',
-          date_of_birth: formData.date_of_birth,
-          gender: formData.gender,
-          phone: formData.phone,
-          address: formData.address
-        })
-
-        // Create student record
-        await supabase.from('students').insert({
-          profile_id: authData.user.id,
-          grade_level_id: formData.grade_level_id || null,
-          enrollment_date: formData.enrollment_date
-        })
-      }
     }
 
     setSaving(false)
@@ -150,22 +122,20 @@ export function StudentFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
             <input
               type="text"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              value={formData.student_name}
+              onChange={(e) => setFormData({ ...formData, student_name: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
               required
             />
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
-              disabled={isEdit}
-              required
             />
           </div>
 
@@ -173,8 +143,8 @@ export function StudentFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
             <input
               type="date"
-              value={formData.date_of_birth}
-              onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+              value={formData.birth_date}
+              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
             />
           </div>
@@ -196,8 +166,8 @@ export function StudentFormPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
             <input
               type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              value={formData.phone_number}
+              onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
             />
           </div>
@@ -205,32 +175,22 @@ export function StudentFormPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
             <select
-              value={formData.grade_level_id}
-              onChange={(e) => setFormData({ ...formData, grade_level_id: e.target.value })}
+              value={formData.level}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value })}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
             >
               <option value="">Select Grade</option>
               {gradeLevels.map(gl => (
-                <option key={gl.id} value={gl.id}>{gl.name}</option>
+                <option key={gl.id} value={gl.name}>{gl.name}</option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment Date</label>
-            <input
-              type="date"
-              value={formData.enrollment_date}
-              onChange={(e) => setFormData({ ...formData, enrollment_date: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
-            />
           </div>
 
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
             <textarea
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              value={formData.phil_address}
+              onChange={(e) => setFormData({ ...formData, phil_address: e.target.value })}
               rows={3}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
             />

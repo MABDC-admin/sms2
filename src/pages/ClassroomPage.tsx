@@ -77,8 +77,8 @@ export function ClassroomPage() {
           grade_levels(name)
         )
       `)
-      .eq('id', subjectId)
-      .single()
+      .eq('id', subjectId || '')
+      .maybeSingle()
 
     if (classData) {
       setSubject({

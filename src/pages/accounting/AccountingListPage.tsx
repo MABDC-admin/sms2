@@ -9,7 +9,7 @@ interface AccountingUser {
   phone: string
   avatar_url: string
   is_active: boolean
-  created_at: string
+  created_at: string | null
 }
 
 export function AccountingListPage() {
@@ -40,10 +40,15 @@ export function AccountingListPage() {
       console.error('Error loading accounting users:', error)
       setAccountingUsers([])
     } else {
-      setAccountingUsers(data?.map(item => ({
-        ...item,
-        avatar_url: item.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${item.full_name}&backgroundColor=transparent`
-      })) || [])
+      setAccountingUsers((data || []).map(item => ({
+        id: item.id,
+        full_name: item.full_name || 'Unknown',
+        email: item.email || '',
+        phone: item.phone || '',
+        avatar_url: item.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${item.full_name || 'user'}&backgroundColor=transparent`,
+        is_active: item.is_active ?? true,
+        created_at: item.created_at
+      })))
     }
     setLoading(false)
   }, [])

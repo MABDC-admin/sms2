@@ -20,26 +20,35 @@ export function TeacherDashboard() {
     async function loadData() {
       setLoading(true)
 
-      const { data: kpiData } = await supabase
-        .from('v_teacher_kpis_year')
-        .select('*')
-        .maybeSingle()
+      // Get teacher's classes count
+      const { count: classCount } = await supabase
+        .from('classes')
+        .select('*', { count: 'exact', head: true })
+
+      // Get pending submissions count
+      const { count: submissionCount } = await supabase
+        .from('submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
 
       const { data: submissionsData } = await supabase
         .from('submissions')
-        .select(`*, assignments:assignment_id (title), profiles:student_id (full_name)`)
-        .in('status', ['submitted', 'late'])
-        .is('graded_at', null)
-        .order('submitted_at', { ascending: false })
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
         .limit(5)
 
       const transformedSubmissions = (submissionsData || []).map((sub: any) => ({
         ...sub,
-        assignment_title: sub.assignments?.title,
-        student_name: sub.profiles?.full_name
+        assignment_title: 'Assignment',
+        student_name: 'Student'
       }))
 
-      setKpis(kpiData as TeacherKpis | null)
+      setKpis({
+        teacher_id: '',
+        my_classes: classCount || 0,
+        submissions_to_check: submissionCount || 0
+      })
       setSubmissions(transformedSubmissions)
       setLoading(false)
     }

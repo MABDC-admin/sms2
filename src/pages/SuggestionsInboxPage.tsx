@@ -3,15 +3,14 @@ import { supabase } from '../lib/supabaseClient'
 
 interface Suggestion {
   id: string
-  type: 'suggestion' | 'review' | 'complaint' | 'feedback'
-  subject: string
+  type: string
+  subject: string | null
   message: string
-  submitter_name: string | null
-  submitter_email: string | null
-  rating: number | null
-  status: 'pending' | 'reviewed' | 'resolved' | 'archived'
+  submitted_by: string | null
+  email: string | null
+  status: string | null
   admin_notes: string | null
-  created_at: string
+  created_at: string | null
 }
 
 const statusColors: Record<string, { bg: string; text: string }> = {
@@ -178,22 +177,21 @@ export function SuggestionsInboxPage() {
                     <span className="text-xl">{typeIcons[item.type]}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-gray-800 truncate">{item.subject}</h3>
+                        <h3 className="font-medium text-gray-800 truncate">{item.subject || 'No subject'}</h3>
                         <span
                           className="px-2 py-0.5 text-xs font-medium rounded-full"
                           style={{
-                            backgroundColor: statusColors[item.status].bg,
-                            color: statusColors[item.status].text,
+                            backgroundColor: statusColors[item.status || 'pending']?.bg || '#F3F4F6',
+                            color: statusColors[item.status || 'pending']?.text || '#6B7280',
                           }}
                         >
-                          {item.status}
+                          {item.status || 'pending'}
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 truncate">{item.message}</p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                        {item.submitter_name && <span>by {item.submitter_name}</span>}
-                        {item.rating && <span>{'⭐'.repeat(item.rating)}</span>}
+                        <span>{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'No date'}</span>
+                        {item.submitted_by && <span>by {item.submitted_by}</span>}
                       </div>
                     </div>
                   </div>
@@ -211,19 +209,15 @@ export function SuggestionsInboxPage() {
               <span
                 className="px-2 py-0.5 text-xs font-medium rounded-full capitalize"
                 style={{
-                  backgroundColor: statusColors[selectedItem.status].bg,
-                  color: statusColors[selectedItem.status].text,
+                  backgroundColor: statusColors[selectedItem.status || 'pending']?.bg || '#F3F4F6',
+                  color: statusColors[selectedItem.status || 'pending']?.text || '#6B7280',
                 }}
               >
-                {selectedItem.status}
+                {selectedItem.status || 'pending'}
               </span>
             </div>
 
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">{selectedItem.subject}</h2>
-
-            {selectedItem.rating && (
-              <div className="mb-3">{'⭐'.repeat(selectedItem.rating)}</div>
-            )}
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">{selectedItem.subject || 'No subject'}</h2>
 
             <p className="text-gray-600 text-sm mb-4 whitespace-pre-wrap">{selectedItem.message}</p>
 
@@ -231,16 +225,16 @@ export function SuggestionsInboxPage() {
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
                   <span className="text-gray-400">From:</span>
-                  <p className="text-gray-700">{selectedItem.submitter_name || 'Anonymous'}</p>
+                  <p className="text-gray-700">{selectedItem.submitted_by || 'Anonymous'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Email:</span>
-                  <p className="text-gray-700">{selectedItem.submitter_email || 'Not provided'}</p>
+                  <p className="text-gray-700">{selectedItem.email || 'Not provided'}</p>
                 </div>
                 <div>
                   <span className="text-gray-400">Date:</span>
                   <p className="text-gray-700">
-                    {new Date(selectedItem.created_at).toLocaleString()}
+                    {selectedItem.created_at ? new Date(selectedItem.created_at).toLocaleString() : 'No date'}
                   </p>
                 </div>
                 <div>
