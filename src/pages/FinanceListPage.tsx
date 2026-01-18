@@ -7,41 +7,41 @@ type FinanceTab = 'overview' | 'payments' | 'invoices' | 'expenses' | 'payroll'
 
 interface Payment {
   id: string
-  student_name: string
+  student_name: string | null
   amount: number
-  date: string
-  type: string
-  status: 'paid' | 'pending' | 'overdue'
-  reference: string
+  date: string | null
+  type: string | null
+  status: string | null
+  reference: string | null
 }
 
 interface Invoice {
   id: string
-  invoice_no: string
-  student_name: string
+  invoice_no: string | null
+  student_name: string | null
   amount: number
-  due_date: string
-  status: 'paid' | 'pending' | 'overdue' | 'partial'
-  paid_amount: number
+  due_date: string | null
+  status: string | null
+  paid_amount: number | null
 }
 
 interface Expense {
   id: string
-  category: string
+  category: string | null
   description: string
   amount: number
-  date: string
-  approved_by: string
-  status: 'approved' | 'pending' | 'rejected'
+  date: string | null
+  approved_by: string | null
+  status: string | null
 }
 
 interface Employee {
   id: string
   name: string
-  position: string
-  department: string
-  salary: number
-  status: 'active' | 'inactive'
+  position: string | null
+  department: string | null
+  salary: number | null
+  status: string | null
 }
 
 export function FinanceListPage() {

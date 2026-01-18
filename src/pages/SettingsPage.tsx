@@ -36,7 +36,7 @@ interface GradeLevel {
 
 interface MenuPermission {
   menu_key: string
-  is_enabled: boolean
+  is_allowed: boolean
 }
 
 type SettingsTab = 'school' | 'academic' | 'users' | 'fees' | 'grades' | 'notifications' | 'system' | 'backup'
@@ -125,39 +125,58 @@ export function SettingsPage() {
   // Load functions
   const loadSchoolInfo = useCallback(async () => {
     const { data } = await supabase.from('school_settings').select('*').single()
-    if (data) setSchoolInfo({ name: data.name || '', address: data.address || '', phone: data.phone || '', email: data.email || '', website: data.website || '', principal: data.principal || '', founded_year: data.founded_year || '' })
+    if (data) setSchoolInfo({ 
+      name: data.name || '', 
+      address: data.address || '', 
+      phone: data.phone || '', 
+      email: data.email || '', 
+      website: data.website || '', 
+      principal: data.principal || '', 
+      founded_year: String(data.founded_year || '') 
+    })
   }, [])
 
   const loadAcademicYears = useCallback(async () => {
     const { data } = await supabase.from('academic_years').select('*').order('start_date', { ascending: false })
-    setAcademicYears(data || [])
+    if (data) {
+      setAcademicYears(data.map(y => ({ ...y, is_active: y.is_active ?? false })))
+    }
   }, [])
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
     const { data } = await supabase.from('profiles').select('id, user_id, full_name, email, role, is_active').order('full_name')
-    setUsers(data?.map(u => ({ ...u, email: u.email || '', is_active: u.is_active ?? true })) || [])
+    setUsers(data?.map(u => ({ ...u, full_name: u.full_name || '', email: u.email || '', role: u.role || 'student', is_active: u.is_active ?? true })) || [])
     setLoading(false)
   }, [])
 
   const loadFees = useCallback(async () => {
-    const { data } = await supabase.from('fee_structure').select('*').order('name')
-    setFees(data || [])
+    const { data } = await supabase.from('fee_structures').select('*').order('name')
+    if (data) {
+      setFees(data.map(f => ({ 
+        id: f.id, 
+        name: f.name, 
+        amount: Number(f.amount) || 0, 
+        grade_level: 'All', 
+        description: f.description || '', 
+        is_required: f.is_active ?? false 
+      })))
+    }
   }, [])
 
   const loadGradeLevels = useCallback(async () => {
-    const { data } = await supabase.from('grade_levels').select('*').order('id')
-    setGradeLevels(data || [])
+    const { data } = await supabase.from('grade_levels').select('*').order('order_index')
+    if (data) {
+      setGradeLevels(data.map(g => ({ id: g.id, name: g.name, is_active: g.is_active ?? true })))
+    }
   }, [])
 
   const loadNotifications = useCallback(async () => {
-    const { data } = await supabase.from('notification_settings').select('*').single()
-    if (data) setNotifications(data)
+    // notification_settings table doesn't exist yet, use defaults
   }, [])
 
   const loadSystemSettings = useCallback(async () => {
-    const { data } = await supabase.from('system_settings').select('*').single()
-    if (data) setSystemSettings(data)
+    // system_settings table doesn't exist yet, use defaults
   }, [])
 
   useEffect(() => {
@@ -217,17 +236,17 @@ export function SettingsPage() {
   // Permission Management
   const openPermissionModal = async (user: UserAccount) => {
     setSelectedUser(user)
-    const { data } = await supabase.from('user_menu_permissions').select('menu_key, is_enabled').eq('user_id', user.user_id)
+    const { data } = await supabase.from('user_menu_permissions').select('menu_key, is_allowed').eq('user_id', user.user_id)
     const permissions = ALL_MENU_KEYS.map(menu => {
       const existing = data?.find(p => p.menu_key === menu.key)
-      return { menu_key: menu.key, is_enabled: existing?.is_enabled ?? true }
+      return { menu_key: menu.key, is_allowed: existing?.is_allowed ?? true }
     })
     setUserPermissions(permissions)
     setShowPermissionModal(true)
   }
 
   const togglePermission = (menuKey: string) => {
-    setUserPermissions(prev => prev.map(p => p.menu_key === menuKey ? { ...p, is_enabled: !p.is_enabled } : p))
+    setUserPermissions(prev => prev.map(p => p.menu_key === menuKey ? { ...p, is_allowed: !p.is_allowed } : p))
   }
 
   const savePermissions = async () => {
@@ -240,7 +259,7 @@ export function SettingsPage() {
     const inserts = userPermissions.map(p => ({
       user_id: selectedUser.user_id,
       menu_key: p.menu_key,
-      is_enabled: p.is_enabled
+      is_allowed: p.is_allowed
     }))
     
     await supabase.from('user_menu_permissions').insert(inserts)
@@ -560,7 +579,7 @@ export function SettingsPage() {
                 return (
                   <div key={menu.key} className="flex justify-between items-center p-3 rounded-xl bg-gray-50">
                     <div className="flex items-center gap-2"><span>{menu.icon}</span><span className="font-medium">{menu.label}</span></div>
-                    <button onClick={() => togglePermission(menu.key)} className={`w-12 h-6 rounded-full relative ${perm?.is_enabled ? 'bg-green-500' : 'bg-gray-300'}`}><div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${perm?.is_enabled ? 'right-0.5' : 'left-0.5'}`}></div></button>
+                    <button onClick={() => togglePermission(menu.key)} className={`w-12 h-6 rounded-full relative ${perm?.is_allowed ? 'bg-green-500' : 'bg-gray-300'}`}><div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${perm?.is_allowed ? 'right-0.5' : 'left-0.5'}`}></div></button>
                   </div>
                 )
               })}
