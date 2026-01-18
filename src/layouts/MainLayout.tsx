@@ -47,12 +47,16 @@ export function MainLayout() {
   }, [user?.id])
 
   async function loadMenuPermissions() {
+    if (!user?.id) return
     const { data } = await supabase
       .from('user_menu_permissions')
       .select('*')
-      .eq('user_id', user?.id)
+      .eq('user_id', user.id)
     
-    setMenuPermissions(data || [])
+    if (data) {
+      // Map is_allowed to is_allowed (field matches now)
+      setMenuPermissions(data as MenuPermission[])
+    }
   }
 
   const handleSignOut = async () => {
@@ -77,7 +81,7 @@ export function MainLayout() {
     // If no permissions set for this user, use role defaults
     const permission = menuPermissions.find(p => p.menu_key === menuKey)
     if (permission) {
-      return permission.is_enabled
+      return permission.is_allowed ?? true
     }
     // Default to true if no explicit permission set
     return true
