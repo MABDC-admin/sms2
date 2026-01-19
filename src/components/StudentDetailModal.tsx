@@ -359,7 +359,6 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
       console.error('Delete error:', err)
     }
   }
-  }
 
   // Save edited student info
   const handleSaveEdit = async () => {
