@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 interface StudentRecord {
@@ -30,6 +30,18 @@ interface Document {
   uploaded_at: string
   uploaded_by: string
   preview_url?: string
+  document_type?: string
+  ai_summary?: string
+  ai_extracted_text?: string
+  ai_metadata?: {
+    keywords?: string[]
+    confidence?: number
+    language?: string
+    suggested_filename?: string
+    personal_info?: Record<string, string>
+    academic_info?: Record<string, string>
+  }
+  ai_processing?: boolean
 }
 
 interface Props {
@@ -82,6 +94,41 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
 
   const colors = gradeAccentColors[student.grade_level] || { header: '#00CED1', accent: '#00CED1', cardBg: '#E0FFFF' }
+
+  useEffect(() => {
+    fetchDocuments()
+  }, [student.id])
+
+  const fetchDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('student_id', student.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching documents:', error)
+      } else if (data) {
+        const mappedDocs: Document[] = data.map(doc => ({
+          id: doc.id,
+          name: doc.file_name,
+          file_path: doc.s3_key || '',
+          file_type: doc.mime_type?.split('/').pop() || 'unknown',
+          uploaded_at: doc.created_at || new Date().toISOString(),
+          uploaded_by: 'Admin',
+          preview_url: doc.s3_url || undefined,
+          document_type: doc.document_type || undefined,
+          ai_summary: doc.ai_summary || undefined,
+          ai_extracted_text: doc.ai_extracted_text || undefined,
+          ai_metadata: doc.ai_metadata as Document['ai_metadata'] || undefined
+        }))
+        setDocuments(mappedDocs)
+      }
+    } catch (err) {
+      console.error('Fetch documents error:', err)
+    }
+  }
 
   // Format date
   const formatDate = (dateStr?: string) => {
@@ -156,7 +203,7 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
     }
   }
 
-  // Upload document
+  // Upload document with AI analysis
   const handleUploadDocument = async () => {
     if (!selectedFile || !docName) return
 
@@ -165,32 +212,74 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
       const fileExt = selectedFile.name.split('.').pop() || 'unknown'
       const fileName = `${Date.now()}-${docName.replace(/\s+/g, '_')}.${fileExt}`
       const filePath = `student-documents/${student.id}/${fileName}`
+      const mimeType = selectedFile.type || 'application/octet-stream'
 
+      // Upload to storage
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('documents')
         .upload(filePath, selectedFile, { upsert: true })
 
       if (uploadError) {
-        alert('Upload failed: ' + uploadError.message)
+        // Fallback to avatars bucket if documents bucket doesn't exist
+        const { error: fallbackError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, selectedFile, { upsert: true })
+        
+        if (fallbackError) {
+          alert('Upload failed: ' + fallbackError.message)
+          setUploading(false)
+          return
+        }
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath)
+      const publicUrl = urlData.publicUrl || supabase.storage.from('avatars').getPublicUrl(filePath).data.publicUrl
+
+      // Save document record to database
+      const { data: docRecord, error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          student_id: student.id,
+          file_name: docName,
+          file_size: selectedFile.size,
+          mime_type: mimeType,
+          s3_key: filePath,
+          s3_url: publicUrl,
+          document_type: 'pending_analysis',
+          notes: `Uploaded: ${selectedFile.name}`
+        })
+        .select()
+        .single()
+
+      if (dbError) {
+        console.error('Database save error:', dbError)
+        alert('File uploaded but failed to save record: ' + dbError.message)
         setUploading(false)
         return
       }
 
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
-
+      // Add document to local state with AI processing indicator
       const newDoc: Document = {
-        id: Date.now().toString(),
+        id: docRecord.id,
         name: docName,
         file_path: filePath,
         file_type: fileExt,
         uploaded_at: new Date().toISOString(),
         uploaded_by: 'Admin',
-        preview_url: data.publicUrl
+        preview_url: publicUrl,
+        ai_processing: true
       }
-      setDocuments([...documents, newDoc])
+      setDocuments(prev => [newDoc, ...prev])
       setShowUploadModal(false)
       setSelectedFile(null)
       setDocName('')
+
+      // Trigger AI analysis for images (async, don't wait)
+      if (mimeType.startsWith('image/')) {
+        triggerAIAnalysis(docRecord.id, publicUrl, mimeType, selectedFile.name)
+      }
+
     } catch (err) {
       console.error('Upload error:', err)
       alert('Upload error: ' + (err as Error).message)
@@ -198,16 +287,78 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
     setUploading(false)
   }
 
-  // Delete document
+  // Trigger AI document analysis
+  const triggerAIAnalysis = async (documentId: string, imageUrl: string, mimeType: string, originalFilename: string) => {
+    try {
+      console.log('Starting AI analysis for document:', documentId)
+      
+      const { data, error } = await supabase.functions.invoke('analyze-document', {
+        body: { documentId, imageUrl, mimeType, originalFilename }
+      })
+
+      if (error) {
+        console.error('AI analysis error:', error)
+        return
+      }
+
+      console.log('AI analysis result:', data)
+
+      if (data?.success && data?.analysis) {
+        // Update local state with AI results
+        setDocuments(prev => prev.map(doc => 
+          doc.id === documentId 
+            ? {
+                ...doc,
+                ai_processing: false,
+                document_type: data.analysis.document_type,
+                ai_summary: data.analysis.summary,
+                ai_extracted_text: data.analysis.extracted_text,
+                ai_metadata: {
+                  keywords: data.analysis.keywords,
+                  confidence: data.analysis.metadata?.confidence,
+                  language: data.analysis.metadata?.language,
+                  suggested_filename: data.analysis.suggested_filename,
+                  personal_info: data.analysis.metadata?.personal_info,
+                  academic_info: data.analysis.metadata?.academic_info
+                }
+              }
+            : doc
+        ))
+      }
+    } catch (err) {
+      console.error('AI analysis failed:', err)
+      // Remove processing indicator even on failure
+      setDocuments(prev => prev.map(doc => 
+        doc.id === documentId ? { ...doc, ai_processing: false } : doc
+      ))
+    }
+  }
+
+  // Delete document from storage and database
   const handleDeleteDocument = async (doc: Document) => {
     if (!confirm(`Delete "${doc.name}"?`)) return
 
     try {
+      // Delete from storage
+      await supabase.storage.from('documents').remove([doc.file_path])
+      // Fallback: also try avatars bucket
       await supabase.storage.from('avatars').remove([doc.file_path])
+      
+      // Delete from database
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', doc.id)
+      
+      if (error) {
+        console.error('Database delete error:', error)
+      }
+      
       setDocuments(documents.filter(d => d.id !== doc.id))
     } catch (err) {
       console.error('Delete error:', err)
     }
+  }
   }
 
   // Save edited student info
@@ -584,13 +735,13 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
                 </button>
               </div>
 
-              {/* Documents Grid with Preview */}
+              {/* Documents Grid with Preview and AI Analysis */}
               {documents.length > 0 ? (
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {documents.map((doc, index) => (
                     <div
                       key={doc.id}
-                      className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:scale-105 cursor-pointer group"
+                      className="bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all cursor-pointer group"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       {/* Preview */}
@@ -609,6 +760,19 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
                             {doc.file_type === 'pdf' ? '📄' : '📎'}
                           </div>
                         )}
+                        {/* AI Processing Indicator */}
+                        {doc.ai_processing && (
+                          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center">
+                            <div className="animate-spin w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full mb-2"></div>
+                            <span className="text-cyan-400 text-xs font-medium">🤖 AI Analyzing...</span>
+                          </div>
+                        )}
+                        {/* Document Type Badge */}
+                        {doc.document_type && doc.document_type !== 'pending_analysis' && (
+                          <div className="absolute top-2 left-2 px-2 py-1 bg-green-500/80 rounded-full text-xs text-white font-medium">
+                            {doc.document_type.replace(/_/g, ' ')}
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                           <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full transition-opacity">
                             👁️ Preview
@@ -619,7 +783,42 @@ export function StudentDetailModal({ student: initialStudent, onClose, onUpdate,
                       {/* Info */}
                       <div className="p-3">
                         <p className="font-medium text-white truncate text-sm">{doc.name}</p>
-                        <p className="text-xs text-gray-400 mb-2">{doc.file_type.toUpperCase()} • {formatDate(doc.uploaded_at)}</p>
+                        <p className="text-xs text-gray-400 mb-1">{doc.file_type.toUpperCase()} • {formatDate(doc.uploaded_at)}</p>
+                        
+                        {/* AI Summary */}
+                        {doc.ai_summary && (
+                          <p className="text-xs text-cyan-300 mb-2 line-clamp-2" title={doc.ai_summary}>
+                            🤖 {doc.ai_summary}
+                          </p>
+                        )}
+                        
+                        {/* AI Confidence */}
+                        {doc.ai_metadata?.confidence !== undefined && (
+                          <div className="flex items-center gap-1 mb-2">
+                            <div className="flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-yellow-500 to-green-500 rounded-full"
+                                style={{ width: `${doc.ai_metadata.confidence * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-400">{Math.round(doc.ai_metadata.confidence * 100)}%</span>
+                          </div>
+                        )}
+                        
+                        {/* Keywords */}
+                        {doc.ai_metadata?.keywords && doc.ai_metadata.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {doc.ai_metadata.keywords.slice(0, 3).map((keyword, i) => (
+                              <span key={i} className="px-1.5 py-0.5 bg-gray-700 rounded text-xs text-gray-300">
+                                {keyword}
+                              </span>
+                            ))}
+                            {doc.ai_metadata.keywords.length > 3 && (
+                              <span className="text-xs text-gray-500">+{doc.ai_metadata.keywords.length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                        
                         <div className="flex gap-1">
                           <button
                             onClick={() => window.open(getPreviewUrl(doc), '_blank')}
