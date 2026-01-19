@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabaseClient'
 
@@ -79,10 +79,12 @@ export function ExcelImportModal({ isOpen, onClose, onImportComplete, schoolYear
     if (data) setGradeLevels(data)
   }, [])
 
-  // Initialize
-  useState(() => {
-    loadGradeLevels()
-  })
+  // Initialize - load grade levels when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadGradeLevels()
+    }
+  }, [isOpen, loadGradeLevels])
 
   // Parse date from various formats
   const parseDate = (value: any): string | null => {
@@ -231,10 +233,16 @@ export function ExcelImportModal({ isOpen, onClose, onImportComplete, schoolYear
   // Parse Excel file
   const parseExcel = async (file: File) => {
     setParsing(true)
-    const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data, { type: 'array', cellDates: true })
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][]
+    console.log('Parsing Excel file:', file.name)
+    
+    try {
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true })
+      console.log('Workbook sheets:', workbook.SheetNames)
+      
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][]
+      console.log('Total rows found:', rows.length)
     
     // Find header row (contains 'STUDENT NAME' or 'LRN')
     let headerRowIndex = 0
@@ -343,9 +351,15 @@ export function ExcelImportModal({ isOpen, onClose, onImportComplete, schoolYear
       })
     }
     
+    console.log('Parsed students:', parsed.length)
     setParsedData(parsed)
     setParsing(false)
     setStep('preview')
+    } catch (error) {
+      console.error('Error parsing Excel:', error)
+      alert('Error parsing Excel file. Please check the format.')
+      setParsing(false)
+    }
   }
 
   // Download template
