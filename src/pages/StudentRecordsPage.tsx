@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { StudentDetailModal } from '../components/StudentDetailModal'
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
+import { ExcelImportModal } from '../components/students/ExcelImportModal'
 
 interface StudentRecord {
   id: string
@@ -48,10 +49,7 @@ export function StudentRecordsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedYear, setSelectedYear] = useState('2025-2026')
-  const [showImportModal, setShowImportModal] = useState(false)
-  const [importPreview, setImportPreview] = useState<StudentRecord[]>([])
-  const [importing, setImporting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showExcelImportModal, setShowExcelImportModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null)
 
   // Load records function (memoized for real-time updates)
@@ -137,83 +135,7 @@ export function StudentRecordsPage() {
     return gradeColors[grade] || 'linear-gradient(135deg, #5B8C51 0%, #7CAE72 50%, #5B8C51 100%)'
   }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const text = event.target?.result as string
-      parseCSV(text)
-    }
-    reader.readAsText(file)
-  }
-
-  function parseCSV(text: string) {
-    const lines = text.split('\n').filter(line => line.trim())
-    if (lines.length < 2) return
-
-    // Parse header
-    const headers = lines[0].split(/[\t,]/).map(h => h.trim().toLowerCase())
-    
-    // Find column indices
-    const levelIdx = headers.findIndex(h => h === 'level')
-    const lrnIdx = headers.findIndex(h => h === 'lrn')
-    const nameIdx = headers.findIndex(h => h.includes('student_name') || h.includes('name'))
-    const birthIdx = headers.findIndex(h => h.includes('birth'))
-    const ageIdx = headers.findIndex(h => h === 'age')
-    const genderIdx = headers.findIndex(h => h === 'gender')
-    const motherContactIdx = headers.findIndex(h => h.includes('mother_contact'))
-    const motherNameIdx = headers.findIndex(h => h.includes('mother_maiden'))
-    const fatherContactIdx = headers.findIndex(h => h.includes('father_contact'))
-    const fatherNameIdx = headers.findIndex(h => h.includes('father_name'))
-
-    // Parse data rows
-    const imported: StudentRecord[] = []
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(/[\t,]/)
-      if (cols.length < 3) continue
-
-      const gradeLevel = cols[levelIdx]?.trim() || 'Grade 1'
-      const lrn = cols[lrnIdx]?.trim() || ''
-      const fullName = cols[nameIdx]?.trim() || ''
-      const birthDate = cols[birthIdx]?.trim() || ''
-      const age = parseInt(cols[ageIdx]?.trim() || '0') || 0
-      const gender = cols[genderIdx]?.trim() || ''
-
-      if (!fullName) continue
-
-      imported.push({
-        id: `import-${i}`,
-        lrn: lrn,
-        full_name: fullName,
-        grade_level: gradeLevel, // Keep original level: Kinder 1, Kinder 2, Grade X
-        age: age,
-        avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${fullName}&backgroundColor=transparent`,
-        status: 'Active',
-        school_year: selectedYear,
-        gender: gender,
-        birth_date: birthDate,
-        mother_contact: cols[motherContactIdx]?.trim() || '',
-        mother_maiden_name: cols[motherNameIdx]?.trim() || '',
-        father_contact: cols[fatherContactIdx]?.trim() || '',
-        father_name: cols[fatherNameIdx]?.trim() || ''
-      })
-    }
-
-    setImportPreview(imported)
-    setShowImportModal(true)
-  }
-
-  function confirmImport() {
-    setImporting(true)
-    // Add imported records to existing records
-    setRecords([...records, ...importPreview])
-    setImporting(false)
-    setShowImportModal(false)
-    setImportPreview([])
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  // Removed old CSV parsing - now using ExcelImportModal
 
   return (
     <div className="flex-1 p-6" style={{ backgroundColor: '#F8FAF7' }}>
@@ -224,19 +146,13 @@ export function StudentRecordsPage() {
           <p className="text-gray-500">Manage student records by school year</p>
         </div>
         <div className="flex gap-2">
-          <label
+          <button
+            onClick={() => setShowExcelImportModal(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-medium cursor-pointer"
             style={{ backgroundColor: '#3B82F6' }}
           >
-            ⬆️ Import CSV
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.txt"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </label>
+            📊 Import Excel
+          </button>
           <button
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-medium"
             style={{ backgroundColor: '#5B8C51' }}
@@ -444,72 +360,13 @@ export function StudentRecordsPage() {
         </div>
       )}
 
-      {/* Import CSV Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-auto py-8">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">⬆️ Import Preview</h2>
-              <button onClick={() => setShowImportModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-            </div>
-            
-            <div className="mb-4 p-4 bg-green-50 rounded-xl">
-              <p className="text-green-800 font-medium">✅ Found {importPreview.length} students ready to import</p>
-              <p className="text-green-600 text-sm">School Year: {selectedYear}</p>
-            </div>
-
-            {/* Preview Table */}
-            <div className="overflow-auto max-h-[400px] mb-4">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th className="text-left px-3 py-2">#</th>
-                    <th className="text-left px-3 py-2">LRN</th>
-                    <th className="text-left px-3 py-2">Name</th>
-                    <th className="text-left px-3 py-2">Grade</th>
-                    <th className="text-left px-3 py-2">Age</th>
-                    <th className="text-left px-3 py-2">Gender</th>
-                    <th className="text-left px-3 py-2">Birth Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importPreview.slice(0, 50).map((record, idx) => (
-                    <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{record.lrn}</td>
-                      <td className="px-3 py-2 font-medium">{record.full_name}</td>
-                      <td className="px-3 py-2">{record.grade_level}</td>
-                      <td className="px-3 py-2">{record.age}</td>
-                      <td className="px-3 py-2">{record.gender}</td>
-                      <td className="px-3 py-2">{record.birth_date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {importPreview.length > 50 && (
-                <p className="text-center text-gray-500 py-2">... and {importPreview.length - 50} more students</p>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setShowImportModal(false); setImportPreview([]); }}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmImport}
-                disabled={importing}
-                className="flex-1 px-4 py-3 rounded-xl text-white font-medium"
-                style={{ backgroundColor: '#5B8C51' }}
-              >
-                {importing ? 'Importing...' : `Import ${importPreview.length} Students`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={showExcelImportModal}
+        onClose={() => setShowExcelImportModal(false)}
+        onImportComplete={loadRecordsFromSupabase}
+        schoolYear={selectedYear === 'All Years' ? '2025-2026' : selectedYear}
+      />
 
       {/* Student Detail Modal */}
       {selectedStudent && (
