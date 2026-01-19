@@ -60,65 +60,48 @@ export function StudentsListPage() {
   const loadStudents = useCallback(async () => {
     setLoading(true)
     
-    // First try to fetch from student_records table (real data)
-    const { data: records } = await supabase
-      .from('student_records')
-      .select('*')
-      .eq('school_year', selectedYear)
-      .order('student_name')
+    try {
+      // Fetch from student_records table
+      const { data: records, error } = await supabase
+        .from('student_records')
+        .select('*')
+        .eq('school_year', selectedYear)
+        .order('student_name')
 
-    if (records && records.length > 0) {
-      const formattedStudents: Student[] = records.map((row: any) => {
-        // Keep original level from CSV
-        const gradeLevel = row.level || 'Grade 1'
-        
-        return {
-          id: row.id,
-          student_id: row.lrn || '',
-          full_name: row.student_name || '',
-          birthdate: row.birth_date || '',
-          email: `${(row.student_name || 'student').toLowerCase().replace(/[^a-z]/g, '').slice(0, 10)}@school.com`,
-          password: '********',
-          grade_level: gradeLevel,
-          avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(row.student_name || 'default')}&backgroundColor=transparent`,
-          gender: row.gender || '',
-          lrn: row.lrn || ''
-        }
-      })
-      setStudents(formattedStudents)
-    } else {
-      // Fallback: try profiles table
-      const { data } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          avatar_url,
-          students!inner (
-            student_id,
-            grade_level:grade_levels (name)
-          )
-        `)
-        .eq('role', 'student')
-        .order('full_name')
+      if (error) {
+        console.error('Error loading students:', error)
+        setStudents([])
+        setLoading(false)
+        return
+      }
 
-      if (data && data.length > 0) {
-        const formattedStudents = data.map((item: any) => ({
-          id: item.id,
-          student_id: item.students?.[0]?.student_id || '',
-          full_name: item.full_name,
-          birthdate: item.date_of_birth || '2010-01-01',
-          email: item.email || '',
-          password: '********',
-          grade_level: item.students?.[0]?.grade_level?.name || 'Grade 1',
-          avatar_url: item.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${item.full_name}&backgroundColor=transparent`
-        }))
+      if (records && records.length > 0) {
+        const formattedStudents: Student[] = records.map((row: any) => {
+          // Keep original level from database
+          const gradeLevel = row.level || 'Grade 1'
+          
+          return {
+            id: row.id,
+            student_id: row.lrn || '',
+            full_name: row.student_name || '',
+            birthdate: row.birth_date || '',
+            email: row.email || '',
+            password: '********',
+            grade_level: gradeLevel,
+            avatar_url: row.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(row.student_name || 'default')}&backgroundColor=transparent`,
+            gender: row.gender || '',
+            lrn: row.lrn || ''
+          }
+        })
         setStudents(formattedStudents)
       } else {
-        // No data available
         setStudents([])
       }
+    } catch (err) {
+      console.error('Error loading students:', err)
+      setStudents([])
     }
+    
     setLoading(false)
   }, [selectedYear])
 
