@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useSchoolYear } from '../../contexts/SchoolYearContext'
 import { useRealtimeSubscription } from '../../hooks/useRealtimeSubscription'
+import { ExcelImportModal } from '../../components/students/ExcelImportModal'
 
 interface Student {
   id: string
@@ -43,6 +44,7 @@ export function StudentsListPage() {
   const [loading, setLoading] = useState(true)
   const [selectedGrade, setSelectedGrade] = useState('All Grades')
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [formData, setFormData] = useState({
     full_name: '',
@@ -292,13 +294,21 @@ export function StudentsListPage() {
           <h1 className="text-3xl font-bold text-gray-800">👥 Students</h1>
           <p className="text-gray-500">Manage all enrolled students</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-medium"
-          style={{ backgroundColor: '#5B8C51' }}
-        >
-          + Add Student
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-gray-700 font-medium bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            📊 Import Excel
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-medium"
+            style={{ backgroundColor: '#5B8C51' }}
+          >
+            + Add Student
+          </button>
+        </div>
       </div>
 
       {/* Grade Filter */}
@@ -516,6 +526,14 @@ export function StudentsListPage() {
           </div>
         </div>
       )}
+
+      {/* Excel Import Modal */}
+      <ExcelImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={loadStudents}
+        schoolYear={selectedYear}
+      />
     </div>
   )
 }
